@@ -1,0 +1,52 @@
+services:
+  gateway:
+    build: ./gateway
+    env_file:
+      - ./gateway/.env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+  
+  auth-service:
+    build: ./auth
+    env_file:
+      - ./auth/.env.docker
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\" "]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+  
+  auth-db:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME_AUTH}
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME_AUTH}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+
+volumes:
+  auth_db_data:
