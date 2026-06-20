@@ -115,9 +115,11 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 }
 
-export const verifyToken = (req: Request, res: Response) => {
+export const verifyToken = async (req: Request, res: Response) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
+
+
 
         if (!token) {
             return res.status(401).json({
@@ -128,7 +130,20 @@ export const verifyToken = (req: Request, res: Response) => {
 
         const payload = getTokenPayload(token);
 
-        return res.status(201).json({
+        const user = await prisma.user.findUnique({
+            where: {
+                userId: payload.userId
+            }
+        })
+
+        if (!user) {
+            return res.status(401).json({
+                "error": "User Not found",
+                "message": "The token you are using is of an user that dosen't exist anymore!"
+            })
+        }
+
+        return res.status(200).json({
             "user_id": payload.userId
         })
 
