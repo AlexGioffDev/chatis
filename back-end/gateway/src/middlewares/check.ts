@@ -40,3 +40,29 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     req.headers['x-user-id'] = String(userId)
     next()
 }
+
+export const hasAccount = async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.headers['x-user-id']
+
+    if (!userId) {
+        return res.status(401).json({ error: "Unauthorized", message: "No user id provided!" })
+    }
+
+    const accountRes = await fetch(`http://account-service:3002/me`, {
+        headers: {
+            'x-internal-secret': process.env.INTERNAL_SECRET!,
+            'x-user-id': String(userId)
+        }
+    })
+
+    if (!accountRes.ok) {
+        return res.status(403).json({
+            error: "Forbidden",
+            message: "You need an account to chat!"
+        })
+    }
+
+    const { account } = await accountRes.json()
+    req.headers['x-account-id'] = String(account.accountId)
+    next()
+}
