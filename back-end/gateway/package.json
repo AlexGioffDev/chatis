@@ -1,7 +1,7 @@
 {
   "name": "gateway",
   "version": "1.0.0",
-  "description": "",
+  "description": "Gateway that make front-end interact with other service",
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
